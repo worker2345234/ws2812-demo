@@ -109,19 +109,18 @@ void ws2812_copy()
 
 void ws2812_handleInterrupt(void *arg)
 {
-  portBASE_TYPE taskAwoken = 0;
-
+  BaseType_t fYieldRequired = pdFALSE;
 
   if (RMT.int_st.ch0_tx_thr_event) {
     ws2812_copy();
     RMT.int_clr.ch0_tx_thr_event = 1;
   }
   else if (RMT.int_st.ch0_tx_end && ws2812_sem) {
-    xSemaphoreGiveFromISR(ws2812_sem, &taskAwoken);
+    xSemaphoreGiveFromISR(ws2812_sem, &fYieldRequired);
     RMT.int_clr.ch0_tx_end = 1;
   }
-
-  return;
+  if (fYieldRequired)
+    portYIELD_FROM_ISR();
 }
 
 void ws2812_init(int gpioNum)
